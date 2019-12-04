@@ -10,6 +10,37 @@ app.all('*', (req, res, next) => {
   res.setHeader('Access-control-allow-origin', '*');
   next();
 });
+app.post('/Query', (req, res) => {
+  var json;
+  for (var key in req.body) {
+    try {
+      json = JSON.parse(key);
+    } catch (e) {
+      console.log('解析数据失败！')
+    }
+  }
+
+  jwt.verify(json.token, "Mead", function (err, data) {
+    if (!err) {
+      let { user, password, exp } = data;
+
+      connection = mysql.createConnection({
+        host: 'localhost',
+        user: user,
+        password: password,
+      });
+      connection.query(json.cmd, function (error, results, fields) {
+        if (error) {
+          console.log('查询错误!');
+          console.log(error);
+          res.send('{"result":false,"DATA":null}');
+        }
+        res.send('{"result":true,"DATA":' + JSON.stringify(results) + '}');
+      });
+    }
+
+  });
+});
 app.post('/Login', (req, res) => {
   var json;
   for (var key in req.body) {
@@ -33,9 +64,13 @@ app.post('/Login', (req, res) => {
     jwt.verify(json.token, "Mead", function (err, data) {
 
       if (err) {
+        if (err.name == "TokenExpiredError") {
+          console.log("Token过期")
+        }
         res.send('{"result":false}');
       } else {
-        let { user, password } = data;
+        let { user, password, exp } = data;
+
         connection = mysql.createConnection({
           host: 'localhost',
           user: user,
@@ -59,6 +94,9 @@ app.post('/Login', (req, res) => {
         res.send('{"result":true,"token":"' + token + '"}');
       }
     });
+  }
+  if (connection != undefined) {
+    connection.end();
   }
 });
 app.listen(8081);
