@@ -12,14 +12,24 @@ app.all('*', (req, res, next) => {
 });
 app.post('/Query', (req, res) => {
   var json;
+  var data = '';
+  console.log(req.body)
   for (var key in req.body) {
-    try {
-      json = JSON.parse(key);
-    } catch (e) {
-      console.log('解析数据失败！')
+    if (req.body[key] !== '') {
+
+      data += key + '=' + req.body[key];
+    } else {
+
+      data += key;
     }
   }
 
+  try {
+    console.log(data);
+    json = JSON.parse(data);
+  } catch (e) {
+    console.log('解析数据失败！')
+  }
   jwt.verify(json.token, "Mead", function (err, data) {
     if (!err) {
       let { user, password, exp } = data;
@@ -35,6 +45,7 @@ app.post('/Query', (req, res) => {
           console.log(error);
           res.send('{"result":false,"DATA":null}');
         }
+
         res.send('{"result":true,"DATA":' + JSON.stringify(results) + '}');
       });
     }
