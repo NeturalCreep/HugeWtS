@@ -43,10 +43,16 @@ app.post('/Query', (req, res) => {
         if (error) {
           console.log('查询错误!');
           console.log(error);
-          res.send('{"result":false,"DATA":null}');
+          res.send('{"result":false,"DATA":null,"error":"' + error + '"}');
+          if (connection != undefined) {
+            connection.end();
+          }
         }
 
         res.send('{"result":true,"DATA":' + JSON.stringify(results) + '}');
+        if (connection != undefined) {
+          connection.end();
+        }
       });
     }
 
@@ -77,10 +83,11 @@ app.post('/Login', (req, res) => {
       if (err) {
         if (err.name == "TokenExpiredError") {
           console.log("Token过期")
+          res.send('{"result":false,"error":"1"}');
         }
-        res.send('{"result":false}');
       } else {
         let { user, password, exp } = data;
+        console.log(user + ":" + password)
 
         connection = mysql.createConnection({
           host: 'localhost',
@@ -102,7 +109,7 @@ app.post('/Login', (req, res) => {
         let token = jwt.sign(content, secretOrPrivateKey, {
           expiresIn: 60 * 60 * 24
         });
-        res.send('{"result":true,"token":"' + token + '"}');
+        res.send('{"result":true,"token":"' + token + '","user":"' + json.username + '","password":"' + json.password + '"}');
       }
     });
   }
